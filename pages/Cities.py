@@ -20,9 +20,11 @@ st.markdown("""
 .med-font{
     font-size:50px;
 }
-.small-font[
+.small-font{
     font-size:16px
-]
+}
+footer {
+    visibility: hidden;}
 </style>
 """,unsafe_allow_html=True)
     
@@ -38,7 +40,7 @@ with cols[0]:
 with cols[1]:
     st.markdown(' <br>', unsafe_allow_html=True)
     st.write('\n')
-    search = st.button('Search')
+    search = st.button('Search', key='city_search')
 if search:
     st.session_state['city_clicked']=option
 
