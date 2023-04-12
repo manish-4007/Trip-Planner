@@ -1,11 +1,17 @@
 import streamlit as st
 from streamlit_extras.app_logo import add_logo
+import datetime
 import pandas as pd
 import pickle
 import numpy as np
 import Recommendations
 import CityPlaces
 from pages import Places
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
+
+geolocator = Nominatim(user_agent="MyApp")
+
 
 add_logo("images/icons/cities_destination.png")
 
@@ -43,6 +49,35 @@ with cols[1]:
     search = st.button('Search', key='city_search')
 if search:
     st.session_state['city_clicked']=option
+
+cols = st.columns(5)
+with cols[0]:
+    passengers = st.text_input('Enter Passengers', 1)
+    
+with cols[1]:
+    choose_date = datetime.date.today() + datetime.timedelta(days=1)
+    d = st.date_input(
+        "Enter the travel date",choose_date,min_value=choose_date )
+
+with cols[2]:
+    curr_location = st.selectbox('Current City',locs['City'].unique())
+with cols[3]:
+    dest_location = st.selectbox('Destinaiton City',locs['City'].unique())
+
+with cols[4]:
+    st.markdown(' <br>', unsafe_allow_html=True)
+    st.write('\n')
+    search = st.button('Search', key='pass_info')
+if search:
+    loc1 = geolocator.geocode(curr_location,timeout = None)
+    loc2 = geolocator.geocode(dest_location,timeout = None)
+    distance = geodesic((loc1.latitude,loc1.longitude),(loc2.latitude,loc2.longitude)).km
+    days = str(d-datetime.date.today()).split()[0]
+    st.session_state['passengers'] = int(passengers)
+    st.session_state['days_remains'] = int(days)
+    st.session_state['distance'] = distance
+    st.session_state['city_clicked']=dest_location
+
 
 def city_load(city_clicked):
     CityPlaces.city_description(city_clicked)

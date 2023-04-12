@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-import time
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
+
+geolocator = Nominatim(user_agent="MyApp")
 
 style = st.markdown("""
 <style>
@@ -18,45 +23,115 @@ style = st.markdown("""
 </style>
 """,unsafe_allow_html=True)
 
-places_dict = pickle.load(open('./pickle_files/places_dict.pkl','rb'))
-locs = pd.DataFrame(places_dict)
+model = pickle.load(open('./pickle_files/xgb_model.pkl','rb'))
+# places_dict = pickle.load(open('./pickle_files/places_dict.pkl','rb'))
+# locs = pd.DataFrame(places_dict)
 
+locs = pd.read_csv('./Dataset/pop_locs.csv')
+hotels = pd.read_csv('./Dataset/Hotels.csv')
+travel = pd.read_csv('./Dataset/travel_updated.csv')
 
-def show_city_places(city):
+def predict_cost(city, travel,passengers,days_remaining,distance):
+    X = travel[['no_of_passengers',	'days_to_departure', 'distance_km']].values
+    y = travel['INR_Amount'].values
+    X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=42)
+    sc = StandardScaler()
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+    
+    pred = model.predict(sc.transform([[passengers,np.log(days_remaining),distance]]))
+
+    a = locs[locs['City']==city]
+    location = geolocator.geocode("Mumbai",timeout = None)
+
+    dist_place = a[['Place','City_Place','latitude','longitude']]
+    lat = a[~(a['latitude'].isnull())]['latitude'].values
+    lon = a[~(a['longitude'].isnull())]['longitude'].values
+    st  = (location.latitude, location.longitude) #put current location
+
+    for i in zip(lat,lon):
+        try:
+            pred = model.predict(sc.transform([[passengers,np.log(days_remaining),geodesic(st,i).km]]))
+            cost = np.exp(pred)  
+            dist_place.loc[dist_place['latitude']==i[0],['Distance']] = geodesic(st,i).km
+            dist_place.loc[dist_place['latitude']==i[0],['Cost']] = cost
+        except:
+            pass
+    dist_place=dist_place.sort_values('Distance')
+    return dist_place
+
+def day_places(city,places):
     col1,col2,col3 = st.columns(3)
-    col_n = city.index
-    for place in col_n:        
-        if(place%3==0):
+    for i,place in enumerate(places):
+        p_id = i
+        if(i%3==0):
             with col1:
-                if st.button(city.iloc[place]['Place'], key=f"col1_button_{place}_{city.iloc[place]['Place']}"):
-                    st.experimental_set_query_params(city_place_id=place)
-                    st.session_state['place_clicked'] = city.iloc[place]['City_Place']
+                if st.button(place, key=f"col1_button_{p_id}_{place}"):
+                    st.experimental_set_query_params(city_place_id=p_id)
+                    st.session_state['place_clicked'] = city.loc[city['Place']==place,'City_Place'].values[0]
                     # st.markdown(f"**{st.session_state['place_clicked']}** was clicked.")
                     st.experimental_rerun()
                 
-        if(place%3==1):
+        if(i%3==1):
             with col2:
-                if st.button(city.iloc[place]['Place'], key=f"col1_button_{place}_{city.iloc[place]['Place']}"):
-                    st.experimental_set_query_params(city_place_id=place)
-                    st.session_state['place_clicked'] = city.iloc[place]['City_Place']
+                if st.button(place, key=f"col1_button_{p_id}_{place}"):
+                    st.experimental_set_query_params(city_place_id=p_id)
+                    st.session_state['place_clicked'] = city.loc[city['Place']==place,'City_Place'].values[0]
                     # st.markdown(f"**{st.session_state['place_clicked']}** was clicked.")
                     st.experimental_rerun()
-        if(place%3==2):
+        if(i%3==2):
             with col3:
-                if st.button(city.iloc[place]['Place'], key=f"col1_button_{place}_{city.iloc[place]['Place']}"):
-                    st.experimental_set_query_params(city_place_id=place)
-                    st.session_state['place_clicked'] = city.iloc[place]['City_Place']
+                if st.button(place, key=f"col1_button_{p_id}_{place}"):
+                    st.experimental_set_query_params(city_place_id=p_id)
+                    st.session_state['place_clicked'] = city.loc[city['Place']==place,'City_Place'].values[0]
                     # st.markdown(f"**{st.session_state['place_clicked']}** was clicked.")
                     st.experimental_rerun()
-                                        
-    params = st.experimental_get_query_params()
-    city_place_id = params.get("city_place_id", None)
+                                            
+params = st.experimental_get_query_params()
+city_place_id = params.get("city_place_id", None)
 
-    # Reset key argument and reload the page
-    if city_place_id is not None:
-        st.experimental_set_query_params()
-        st.experimental_rerun()
-        
+# Reset key argument and reload the page
+if city_place_id is not None:
+    st.experimental_set_query_params()
+    st.experimental_rerun()
+            
+
+
+def show_city_places(city, passengers=1,days_remaining=10,distance=1000):
+    if 'passengers' in st.session_state:
+        passengers = st.session_state['passengers']
+        days_remaining = st.session_state['days_remains']
+        distance = st.session_state['distance']
+    ct = city['City'].values[0]
+    dist_place = predict_cost(ct, travel,passengers,days_remaining,distance)
+    dist_place= dist_place.reset_index(drop=True)
+    st.session_state['passengers']  = 1
+    st.session_state['days_remains']  = 10
+    st.session_state['distance']  = 1000
+    
+    st.subheader(f"To visit '{ct}' City takes around {int(np.floor(len(dist_place)/6))} - {int(np.ceil(len(dist_place)/5))} days")
+    cost = round(dist_place['Cost'].values[0])
+    st.subheader(f'It costs Rs. {cost} for {passengers} people')
+    day={}
+    l=[]
+    c =0
+    d=0
+    for i,j in dist_place.iterrows():
+        if c==6:
+            day[d] = l
+            l=[]
+            c=0
+            d+=1
+        l.append((j[0]))
+        c+=1
+
+    day[d] = l
+    d_list = ["Day " + str(k+1) for k in day.keys()]
+    tab = st.tabs(d_list)
+    for i in day: 
+        with tab[i]:
+            day_places(city,day[i])
+            
 
 def show_places(places):
     col1, col2, col3 = st.columns(3)

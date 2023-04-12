@@ -4,3 +4,7 @@ scikit_learn==1.2.1
 st_click_detector==0.1.3
 streamlit==1.14.1
 streamlit_extras==0.2.6
+geopy
+nltk
+folium
+xgboost
