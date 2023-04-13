@@ -7,3 +7,4 @@ st_click_detector
 streamlit==1.14.1
 streamlit-extras
 streamlit_folium
+xgboost
