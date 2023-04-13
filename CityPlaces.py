@@ -6,6 +6,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
+import folium
+from streamlit_folium import st_folium
 
 geolocator = Nominatim(user_agent="MyApp")
 
@@ -132,6 +134,74 @@ def show_city_places(city, passengers=1,days_remaining=10,distance=1000):
         with tab[i]:
             day_places(city,day[i])
             
+def show_map(city):
+    places = locs.loc[locs['City']==city]
+    places_lat_long = places.loc[:,['Place','City_Place', 'Rating','longitude', 'latitude']].dropna()
+    best_places_lat_long = places_lat_long[:7]
+
+    city_hotels = hotels.loc[hotels['city']==city]
+    hotels_lat_long_area = city_hotels.groupby('locality').first().loc[:, ['property_name','longitude', 'latitude']].dropna().assign(
+        n_hotels = hotels.groupby('locality').locality.count(),
+        n_reviews = (hotels.assign(site_review_count=hotels.site_review_count.fillna(0))\
+                    .groupby('locality').site_review_count.sum())
+    )
+    hotels_lat_long = city_hotels.loc[:, ['property_name','longitude', 'latitude']].dropna()
+    
+    location = geolocator.geocode(city,timeout = None)
+    m = folium.Map(
+        location=[location.latitude, location.longitude],
+        zoom_start=12
+    )
+    try:
+        fg_places = folium.FeatureGroup(name = 'All Places',show = False)
+        fg_hotel = folium.FeatureGroup(name = 'Hotels',show = False)
+        fg_hotel_area = folium.FeatureGroup(name = 'Area-Wise Hotels',show = False)
+
+        best_places_lat_long.apply(
+            lambda ll: folium.Marker(
+                                    location=[ll.latitude, ll.longitude],
+                                    zoom_start = 12,
+                                    fill=True,
+                                    color='red',
+                                    tooltip=ll.Place + '\n(' + str(round(ll.Rating,2))+')',
+                                    popup=folium.Popup(ll.City_Place + '\n' + str(round(ll.Rating,2)))).add_to(m), axis='columns')
+
+        places_lat_long.apply(
+            lambda ll: folium.Marker(
+                                    location=[ll.latitude, ll.longitude],
+                                    zoom_start = 12,
+                                    fill=True,
+                                    color='red',
+                                    tooltip=ll.Place + '\n(' + str(round(ll.Rating,2))+')',
+                                    popup=ll.Place).add_to(fg_places), axis='columns')
+
+        hotels_lat_long.apply(
+            lambda ll: folium.Circle(
+                                    location=[ll.latitude, ll.longitude],
+                                    zoom_start = 12,
+                                    fill=True,
+                                    color='black',
+                                    popup=ll.property_name).add_to(fg_hotel), axis='columns')
+
+        
+        max_n_hotels = hotels_lat_long_area.n_hotels.max()
+        hotels_lat_long_area.apply(
+            lambda ll: folium.Circle(
+                                location=[ll.latitude, ll.longitude],
+                                radius=2000 * (ll.n_hotels / max_n_hotels),  #for region where hotels are present
+                                zoom_start = 12,
+                                fill=True,
+                                color='black',
+                                popup=ll.property_name).add_to(fg_hotel_area), axis='columns')
+        fg_places.add_to(m)
+        fg_hotel.add_to(m)
+        fg_hotel_area.add_to(m)
+        m.add_child(folium.LayerControl())
+        st_map = st_folium(m, width=700, height = 400)
+    except Exception as e:
+        print(e,"\n\nLocation not found: Getting Error !!")
+
+
 
 def show_places(places):
     col1, col2, col3 = st.columns(3)
@@ -220,4 +290,6 @@ def city_description(city):
     ct=locs[locs['City']==city].reset_index()
     ct_desc = ct.iloc[0]['City_desc']
     st.markdown(f'<p class= big-font style= color:pink;>{city}</p><p class= small-font>{ct_desc}</p><br>',unsafe_allow_html=True)
+    st.subheader(f"Best Hotels and Places to visit when you are in City {city}  ")
+    show_map(city)
     show_city_places(ct)

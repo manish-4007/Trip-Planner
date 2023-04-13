@@ -8,3 +8,4 @@ geopy
 nltk
 folium
 xgboost
+streamlit_folium 
