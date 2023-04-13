@@ -5,5 +5,5 @@ pandas
 scikit_learn
 st_click_detector
 streamlit==1.14.1
-streamlit-extras==0.2.6
+streamlit-extras==0.2.7
 streamlit_folium
