@@ -2,7 +2,7 @@ numpy
 pandas
 scikit_learn
 st_click_detector
-streamlit_extras==0.2.6
+streamlit-extras
 streamlit
 geopy
 nltk
