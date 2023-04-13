@@ -5,7 +5,8 @@ This MLproject is based on content and popularity bases Recommendation System, u
 
 To show the poject, streamlit is used for the web development and deployment. This is an end-to-end Project to recoommend for the tourists and travelers.
 
-Libraries used: pandas, numpy, nltk, streamlit, sklearn
+Libraries used: pandas, numpy, nltk, streamlit, sklearn, Folium
+
 Dataset: Data collect with some web scrapping from tourism website and also from Kaggle which consist cities, places, rating, description, reviews
 
 Project Link : https://manish-4007-trip-planner-app-epx3rh.streamlit.app/ 
