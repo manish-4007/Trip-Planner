@@ -198,10 +198,9 @@ def show_map(city):
         fg_hotel_area.add_to(m)
         m.add_child(folium.LayerControl())
         st_map = st_folium(m, width=700, height = 400)
+
     except Exception as e:
         print(e,"\n\nLocation not found: Getting Error !!")
-
-
 
 def show_places(places):
     col1, col2, col3 = st.columns(3)
