@@ -50,6 +50,10 @@ with cols[1]:
 if search:
     st.session_state['city_clicked']=option
 
+st.markdown(' <br>', unsafe_allow_html=True)
+st.markdown(' <br>', unsafe_allow_html=True)
+st.markdown(' <br>', unsafe_allow_html=True)
+st.subheader(' Enter the data of the passenger to estimate effective cost to visit the Destination Place', )
 cols = st.columns(5)
 with cols[0]:
     passengers = st.text_input('Enter Passengers', 1)
@@ -67,7 +71,7 @@ with cols[3]:
 with cols[4]:
     st.markdown(' <br>', unsafe_allow_html=True)
     st.write('\n')
-    search = st.button('Search', key='pass_info')
+    search = st.button('Estimate Cost', key='pass_info')
 if search:
     loc1 = geolocator.geocode(curr_location,timeout = None)
     loc2 = geolocator.geocode(dest_location,timeout = None)
@@ -77,6 +81,7 @@ if search:
     st.session_state['days_remains'] = int(days)
     st.session_state['distance'] = distance
     st.session_state['city_clicked']=dest_location
+    st.session_state['curr_loc']=curr_location
 
 
 def city_load(city_clicked):

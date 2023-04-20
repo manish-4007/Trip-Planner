@@ -44,12 +44,16 @@ def predict_cost(city, travel,passengers,days_remaining,distance):
     pred = model.predict(sc.transform([[passengers,np.log(days_remaining),distance]]))
 
     a = locs[locs['City']==city]
-    location = geolocator.geocode("Mumbai",timeout = None)
+    try :
+        location = geolocator.geocode(city,timeout = None)
+    except:
+        location = geolocator.geocode(st.session_state['curr_loc'],timeout = None)
+
+    st  = (location.latitude, location.longitude) #put current location
 
     dist_place = a[['Place','City_Place','latitude','longitude']]
     lat = a[~(a['latitude'].isnull())]['latitude'].values
     lon = a[~(a['longitude'].isnull())]['longitude'].values
-    st  = (location.latitude, location.longitude) #put current location
 
     for i in zip(lat,lon):
         try:
@@ -59,7 +63,8 @@ def predict_cost(city, travel,passengers,days_remaining,distance):
             dist_place.loc[dist_place['latitude']==i[0],['Cost']] = cost
         except:
             pass
-    dist_place=dist_place.sort_values('Distance')
+    if len(dist_place)>1:
+        dist_place=dist_place.sort_values('Distance')
     return dist_place
 
 def day_places(city,places):
@@ -112,8 +117,11 @@ def show_city_places(city, passengers=1,days_remaining=10,distance=1000):
     st.session_state['distance']  = 1000
     
     st.subheader(f"To visit '{ct}' City takes around {int(np.floor(len(dist_place)/6))} - {int(np.ceil(len(dist_place)/5))} days")
-    cost = round(dist_place['Cost'].values[0])
-    st.subheader(f'It costs Rs. {cost} for {passengers} people')
+    try:
+        cost = round(dist_place['Cost'].values[0])
+        st.subheader(f'It costs Rs. {cost} for {passengers} people')
+    except:
+        print('It has null dataFrame')
     day={}
     l=[]
     c =0
@@ -200,7 +208,7 @@ def show_map(city):
         st_map = st_folium(m, width=700, height = 400)
 
     except Exception as e:
-        print(e,"\n\nLocation not found: Getting Error !!")
+        print(e,"\n\nLocation not found: Getting Error !!")     
 
 def show_places(places):
     col1, col2, col3 = st.columns(3)
