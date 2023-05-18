@@ -4,7 +4,9 @@ numpy
 pandas
 scikit_learn
 st_click_detector
-streamlit==1.14.1
+streamlit==1.22.0
 streamlit-extras
 streamlit_folium
 xgboost
+altair<5
+# pickle5==0.0.11
