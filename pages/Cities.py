@@ -66,7 +66,10 @@ with cols[1]:
 with cols[2]:
     curr_location = st.selectbox('Current City',locs['City'].unique())
 with cols[3]:
-    dest_location = st.selectbox('Destinaiton City',locs['City'].unique())
+    if 'city_clicked' not in st.session_state:
+        dest_location = st.selectbox('Destinaiton City',locs['City'].unique())
+    else:
+        dest_location = st.text_input('Destinaiton City',st.session_state['city_clicked'])
 
 with cols[4]:
     st.markdown(' <br>', unsafe_allow_html=True)

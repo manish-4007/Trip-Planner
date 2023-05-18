@@ -8,6 +8,7 @@ from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 import folium
 from streamlit_folium import st_folium
+from streamlit_extras.switch_page_button import switch_page
 
 geolocator = Nominatim(user_agent="MyApp")
 
@@ -32,6 +33,7 @@ model = pickle.load(open('./pickle_files/xgb_model.pkl','rb'))
 locs = pd.read_csv('./Dataset/pop_locs.csv')
 hotels = pd.read_csv('./Dataset/Hotels.csv')
 travel = pd.read_csv('./Dataset/travel_updated.csv')
+df_hotel_loc = pd.read_csv('Dataset/final_hotel_data.csv')
 
 def predict_cost(city, travel,passengers,days_remaining,distance):
     X = travel[['no_of_passengers',	'days_to_departure', 'distance_km']].values
@@ -118,8 +120,11 @@ def show_city_places(city, passengers=1,days_remaining=10,distance=1000):
     
     st.subheader(f"To visit '{ct}' City takes around {int(np.floor(len(dist_place)/6))} - {int(np.ceil(len(dist_place)/5))} days")
     try:
+        df = df_hotel_loc.loc[df_hotel_loc['city']==ct]
+        c_min = df['price'].min()*passengers
+        c_max = df['price'].max()*passengers
         cost = round(dist_place['Cost'].values[0])
-        st.subheader(f'It costs Rs. {cost} for {passengers} people')
+        st.subheader(f'It costs Rs. {cost+c_min} to Rs. {cost+c_max} for {passengers} people along with travel and hotel charges')
     except:
         print('It has null dataFrame')
     day={}
@@ -206,6 +211,9 @@ def show_map(city):
         fg_hotel_area.add_to(m)
         m.add_child(folium.LayerControl())
         st_map = st_folium(m, width=700, height = 400)
+        more = st.button('hotels and places', key='more')
+        if more:
+            switch_page('Places')
 
     except Exception as e:
         print(e,"\n\nLocation not found: Getting Error !!")     
@@ -219,6 +227,7 @@ def show_places(places):
                 if st.button(places[p], key=f"col1_button_{p}_{places[p]}"):
                     st.experimental_set_query_params(place_id=p)
                     st.session_state['place_clicked'] = places[p]
+                    city_clicked = locs.loc[locs['City_Place']== places[p], 'City'].values[0]
                     # st.markdown(f"**{st.session_state['place_clicked']}** was clicked.")
                     st.experimental_rerun()
         if p % 3 == 1:
@@ -226,6 +235,7 @@ def show_places(places):
                 if st.button(places[p], key=f"col2_button_{p}_{places[p]}"):
                     st.experimental_set_query_params(place_id=p)
                     st.session_state['place_clicked'] = places[p]
+                    city_clicked = locs.loc[locs['City_Place']== places[p], 'City'].values[0]
                     # st.markdown(f"**{st.session_state['place_clicked']}** was clicked.")
                     st.experimental_rerun()
         if p % 3 == 2:
@@ -233,6 +243,7 @@ def show_places(places):
                 if st.button(places[p], key=f"col3_button_{p}_{places[p]}"):
                     st.experimental_set_query_params(place_id=p)
                     st.session_state['place_clicked'] = places[p]
+                    city_clicked = locs.loc[locs['City_Place']== places[p], 'City'].values[0]
                     # st.markdown(f"**{st.session_state['place_clicked']}** was clicked.")
                     st.experimental_rerun()
                     
