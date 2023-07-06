@@ -9,4 +9,4 @@ Libraries used: pandas, numpy, nltk, streamlit, sklearn, Folium
 
 Dataset: Data collect with some web scrapping from tourism website and also from Kaggle which consist cities, places, rating, description, reviews
 
-Project Link : https://manish-4007-trip-planner-app-epx3rh.streamlit.app/ 
+Project Link : https://trip-planner-m.streamlit.app/
